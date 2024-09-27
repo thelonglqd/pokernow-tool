@@ -1,101 +1,188 @@
-import Image from "next/image";
+'use client' // 👈 use it here
+
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from 'react'
+import FileUpload from '../components/FileUpload'
+import { uniqBy, isEqual } from 'lodash'
+
+import { AgGridReact } from 'ag-grid-react' // React Data Grid Component
+import 'ag-grid-community/styles/ag-grid.css' // Mandatory CSS required by the Data Grid
+import 'ag-grid-community/styles/ag-theme-quartz.css' // Optional Theme applied to the Data Grid
+
+function NoDataComponent() {
+  return (
+    <div className="no-data-container">
+      <p>Choose ledger csv file first</p>
+    </div>
+  )
+}
+
+const gridOptions = {
+  rowHeight: 35,
+  autoSizeStrategy: {
+    type: 'fitGridWidth',
+    defaultMinWidth: 100,
+  },
+  domLayout: 'autoHeight',
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [gridApi, setGridApi] = useState(null)
+  const [selectedRows, setSelectedRows] = useState([])
+  const [addToFund, setAddToFund] = useState(0)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const onGridReady = useCallback(params => {
+    setGridApi(params.api)
+  }, [])
+
+  const [data, setData] = useState([])
+  const [originData, setOriginData] = useState([])
+
+  const [colDefs] = useState([
+    {
+      field: 'player_nickname',
+      width: 150,
+      resizable: false,
+    },
+    { field: 'player_id', width: 150, resizable: false },
+    { field: 'gross', width: 80, resizable: false },
+    {
+      field: 'net',
+      width: 80,
+      resizable: false,
+      headerStyle: { textAlign: 'center' },
+      cellStyle: params => {
+        if (params.value >= 0) {
+          return {
+            backgroundColor: '#73EC8B',
+            color: 'white',
+            fontWeight: 'bold',
+          }
+        } else {
+          return {
+            backgroundColor: '#FF885B',
+            color: 'white',
+            fontWeight: 'bold',
+          }
+        }
+      },
+    },
+  ])
+
+  const selection = useMemo(() => {
+    return {
+      mode: 'multiRow',
+    }
+  }, [])
+
+  useEffect(() => {
+    setAddToFund(
+      data.reduce((acc, cur) => {
+        return (acc += cur.gross - cur.net)
+      }, 0),
+    )
+  }, [data])
+
+  const handleSelect = e => {
+    const selectedData = gridApi.getSelectedRows()
+    setSelectedRows(selectedData)
+  }
+
+  const handleDataParsed = parsedData => {
+    setData(parsedData)
+    setOriginData(parsedData)
+  }
+
+  const handleMergeRows = () => {
+    const ids = selectedRows.map(row => row.player_id)
+    const sum = selectedRows.reduce(
+      (acc, row) => acc + row.net,
+      0,
+    )
+
+    setData(prev => {
+      return uniqBy(
+        prev.map(row =>
+          ids.includes(row.player_id)
+            ? {
+                ...row,
+                player_id: ids,
+                gross: sum,
+                net:
+                  sum <= 0 ? sum : Math.floor(sum * 0.95),
+              }
+            : row,
+        ),
+        'player_id',
+      )
+    })
+
+    setSelectedRows([])
+  }
+
+  const handleRevert = () => {
+    setData(originData)
+  }
+
+  return (
+    <div className="container">
+      <div className="ultilities">
+        <FileUpload onDataParsed={handleDataParsed} />
+        <div>
+          <button
+            disabled={selectedRows.length <= 1}
+            className="btn btn-merge"
+            onClick={handleMergeRows}>
+            Merge
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+        <div>
+          <button
+            disabled={isEqual(data, originData)}
+            className="btn btn-revert"
+            onClick={handleRevert}>
+            Revert
+          </button>
+        </div>
+        <div>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 'bold',
+              color: '#3A6D8C',
+            }}>
+            Fund:{' '}
+          </span>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 'bold',
+              color: '#4379F2',
+            }}>
+            +{addToFund}
+          </span>
+        </div>
+      </div>
+      {data.length > 0 ? (
+        <div
+          style={{ width: 800 }}
+          className="ag-theme-quartz">
+          <AgGridReact
+            rowData={data}
+            columnDefs={colDefs}
+            selection={selection}
+            onSelectionChanged={handleSelect}
+            onGridReady={onGridReady}
+            gridOptions={gridOptions}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      ) : (
+        <NoDataComponent />
+      )}
     </div>
-  );
+  )
 }
