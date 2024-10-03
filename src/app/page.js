@@ -99,8 +99,8 @@ export default function Home() {
 
   const handleMergeRows = () => {
     const ids = selectedRows.map(row => row.player_id)
-    const sum = selectedRows.reduce(
-      (acc, row) => acc + row.net,
+    const grossSum = selectedRows.reduce(
+      (acc, row) => acc + row.gross,
       0,
     )
 
@@ -111,9 +111,11 @@ export default function Home() {
             ? {
                 ...row,
                 player_id: ids,
-                gross: sum,
+                gross: grossSum,
                 net:
-                  sum <= 0 ? sum : Math.floor(sum * 0.95),
+                  grossSum <= 0
+                    ? grossSum
+                    : Math.floor(grossSum * 0.95),
               }
             : row,
         ),
