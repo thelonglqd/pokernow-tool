@@ -52,6 +52,11 @@ body {
   margin-bottom: 16px;
 }
 
+.functionalities {
+  display: flex;
+  gap: 12px;
+}
+
 .btn {
   padding: 12px 36px;
   border-radius: 8px;
@@ -60,7 +65,7 @@ body {
 }
 
 .btn-merge {
-  background-color: blueviolet;
+  background-color: #db4437;
 }
 
 .btn:disabled {
@@ -69,7 +74,7 @@ body {
 }
 
 .btn-revert {
-  background-color: orange;
+  background-color: #f4b400;
 }
 
 input[type='file'] {
@@ -77,7 +82,7 @@ input[type='file'] {
 }
 
 .custom-file-upload {
-  background-color: orangered;
+  background-color: #4285f4;
   color: white;
   font-weight: bold;
   padding: 12px 36px;

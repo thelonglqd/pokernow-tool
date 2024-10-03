@@ -27,6 +27,7 @@ const gridOptions = {
     type: 'fitGridWidth',
     defaultMinWidth: 100,
   },
+  suppressCellFocus: true,
   domLayout: 'autoHeight',
 }
 
@@ -58,13 +59,17 @@ export default function Home() {
       cellStyle: params => {
         if (params.value >= 0) {
           return {
-            backgroundColor: '#73EC8B',
+            fontSize: 18,
+            backgroundColor: '#0F9D58',
+            opacity: 0.95,
             color: 'white',
             fontWeight: 'bold',
           }
         } else {
           return {
-            backgroundColor: '#FF885B',
+            fontSize: 18,
+            backgroundColor: '#db4437',
+            opacity: 0.95,
             color: 'white',
             fontWeight: 'bold',
           }
@@ -133,37 +138,39 @@ export default function Home() {
   return (
     <div className="container">
       <div className="ultilities">
-        <FileUpload onDataParsed={handleDataParsed} />
-        <div>
-          <button
-            disabled={selectedRows.length <= 1}
-            className="btn btn-merge"
-            onClick={handleMergeRows}>
-            Merge
-          </button>
+        <div className="functionalities">
+          <FileUpload onDataParsed={handleDataParsed} />
+          {data.length > 0 ? (
+            <button
+              disabled={selectedRows.length <= 1}
+              className="btn btn-merge"
+              onClick={handleMergeRows}>
+              Merge
+            </button>
+          ) : null}
+          {data.length > 0 ? (
+            <button
+              disabled={isEqual(data, originData)}
+              className="btn btn-revert"
+              onClick={handleRevert}>
+              Revert
+            </button>
+          ) : null}
         </div>
-        <div>
-          <button
-            disabled={isEqual(data, originData)}
-            className="btn btn-revert"
-            onClick={handleRevert}>
-            Revert
-          </button>
-        </div>
-        <div>
+        <div className="fund">
           <span
             style={{
-              fontSize: 16,
+              fontSize: 24,
               fontWeight: 'bold',
-              color: '#3A6D8C',
+              color: '#0F9D58',
             }}>
             Fund:{' '}
           </span>
           <span
             style={{
-              fontSize: 16,
+              fontSize: 24,
               fontWeight: 'bold',
-              color: '#4379F2',
+              color: '#0F9D58',
             }}>
             +{addToFund}
           </span>
